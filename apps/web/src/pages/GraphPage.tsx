@@ -22,7 +22,7 @@ export default function GraphPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="border-b border-slate-800 bg-slate-950 p-4">
+      <div className="border-b border-slate-800 bg-slate-950 py-4 px-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Dependency Graph</h1>
@@ -38,7 +38,7 @@ export default function GraphPage() {
       </div>
 
       {/* Legend */}
-      <div className="border-b border-slate-800 bg-slate-950 px-4 py-3">
+      <div className="border-b border-slate-800 bg-slate-950 px-10 py-3">
         <div className="flex gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-green-600" />

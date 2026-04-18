@@ -1,13 +1,12 @@
-import { Router, type Request, type Response } from 'express'
 import type Database from 'better-sqlite3'
+import { Router, type Request, type Response } from 'express'
 import {
-  getAllFlags,
-  getFlagById,
   createFlag,
-  updateFlag,
   deleteFlag,
   getAllDependencies,
-  getAllStates,
+  getAllFlags,
+  getFlagById,
+  updateFlag,
 } from '../db/queries'
 
 export function createFlagsRouter(db: Database.Database): Router {
@@ -16,17 +15,15 @@ export function createFlagsRouter(db: Database.Database): Router {
   // GET /flags — list all flags with their states and dependencies
   router.get('/', (_req: Request, res: Response) => {
     const flags = getAllFlags(db)
-    const states = getAllStates(db)
     const edges = getAllDependencies(db)
 
-    // Attach states and dependencies to each flag so the
-    // frontend gets everything it needs in one request
+    // Flags already have states populated from toFlag mapper
+    // Just attach the dependencies metadata for the frontend
     const enriched = flags.map(flag => ({
       ...flag,
-      states: states.filter(s => s.flagId === flag.id),
-      dependencies: edges.filter(
-        e => e.fromFlagId === flag.id || e.toFlagId === flag.id
-      ),
+      dependencyCount: edges.filter(
+        e => e.flagId === flag.id || e.dependsOn === flag.id
+      ).length,
     }))
 
     res.json(enriched)
@@ -40,12 +37,13 @@ export function createFlagsRouter(db: Database.Database): Router {
       return
     }
 
-    const states = getAllStates(db).filter(s => s.flagId === flag.id)
-    const edges = getAllDependencies(db).filter(
-      e => e.fromFlagId === flag.id || e.toFlagId === flag.id
-    )
-
-    res.json({ ...flag, states, dependencies: edges })
+    const edges = getAllDependencies(db)
+    res.json({
+      ...flag,
+      dependencyCount: edges.filter(
+        e => e.flagId === flag.id || e.dependsOn === flag.id
+      ).length,
+    })
   })
 
   // POST /flags — create a new flag

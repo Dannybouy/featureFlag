@@ -1,22 +1,24 @@
-import type Database from 'better-sqlite3'
-import { randomUUID } from 'crypto'
 import type {
+  Dependency,
+  DependencyType,
+  Environment,
   Flag,
   FlagDependency,
   FlagEnvironmentState,
-  DependencyType,
-  Environment,
 } from '@repo/types'
-import { toFlag, toFlagDependency, toFlagState } from './mappers'
+import type Database from 'better-sqlite3'
+import { randomUUID } from 'crypto'
+import { toDependency, toFlag, toFlagState } from './mappers'
 
 // Flags
 
 export function getAllFlags(db: Database.Database): Flag[] {
-  return (db.prepare('SELECT * FROM flags').all() as any[]).map(toFlag)
+  return (db.prepare('SELECT * FROM flags').all() as any[]).map(row => toFlag(row, db))
 }
 
 export function getFlagById(db: Database.Database, id: string | string[]): Flag | null {
-  return (db.prepare('SELECT * FROM flags WHERE id = ?').get(id) as Flag) ?? null
+  const row = db.prepare('SELECT * FROM flags WHERE id = ?').get(id) as any
+  return row ? toFlag(row, db) : null
 }
 
 export function createFlag(
@@ -93,9 +95,8 @@ export function setFlagEnabled(
   ).run(enabled ? 1 : 0, flagId, environment)
 }
 
-// ── Dependencies (edges)
-export function getAllDependencies(db: Database.Database): FlagDependency[] {
-  return (db.prepare('SELECT * FROM flag_dependencies').all() as any[]).map(toFlagDependency)
+export function getAllDependencies(db: Database.Database): Dependency[] {
+  return (db.prepare('SELECT * FROM flag_dependencies').all() as any[]).map(toDependency)
 }
 
 export function getDependenciesForFlag(
@@ -112,16 +113,17 @@ export function getDependenciesForFlag(
 export function createDependency(
   db: Database.Database,
   data: { fromFlagId: string; toFlagId: string; type: DependencyType }
-): FlagDependency {
+): Dependency {
   const id = randomUUID()
   db.prepare(
     `INSERT INTO flag_dependencies (id, from_flag_id, to_flag_id, type)
      VALUES (?, ?, ?, ?)`
   ).run(id, data.fromFlagId, data.toFlagId, data.type)
 
-  return db
+  const row = db
     .prepare('SELECT * FROM flag_dependencies WHERE id = ?')
-    .get(id) as FlagDependency
+    .get(id) as any
+  return toDependency(row)
 }
 
 export function deleteDependency(db: Database.Database, id: string): boolean {
@@ -136,9 +138,17 @@ export function loadGraphSnapshot(
   db: Database.Database,
   environment: Environment
 ) {
+  const dependencies = getAllDependencies(db)
+  // Convert Dependency format to FlagDependency format for graphEngine
+  const edges = dependencies.map(d => ({
+    fromFlagId: d.flagId,
+    toFlagId: d.dependsOn,
+    type: d.type.toUpperCase() as DependencyType,
+  }))
+  
   return {
     flags: getAllFlags(db),
-    edges: getAllDependencies(db),
+    edges,
     states: getStatesForEnvironment(db, environment),
   }
 }

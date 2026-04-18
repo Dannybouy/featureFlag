@@ -1,51 +1,63 @@
-import { Router, type Request, type Response } from 'express'
-import type Database from 'better-sqlite3'
-import { getAllDependencies, createDependency, deleteDependency, getFlagById } from '../db/queries'
 import type { DependencyType } from '@repo/types'
+import type Database from 'better-sqlite3'
+import { Router, type Request, type Response } from 'express'
+import { createDependency, deleteDependency, getAllDependencies, getFlagById } from '../db/queries'
 import { graphEngine } from '../graph/graphEngine'
 
 export function createDependenciesRouter(db: Database.Database): Router {
   const router = Router()
 
+  // GET /dependencies — fetch all dependencies
+  router.get('/', (_req: Request, res: Response) => {
+    const dependencies = getAllDependencies(db)
+    res.json(dependencies)
+  })
+
   // POST /dependencies — declare a new relationship between two flags
   router.post('/', (req: Request, res: Response) => {
-    const { fromFlagId, toFlagId, type } = req.body
+    const { flagId, dependsOn, type } = req.body
 
     // ── Input validation ───────────────────────────────────────────────────
-    if (!fromFlagId || !toFlagId || !type) {
-      res.status(400).json({ error: 'fromFlagId, toFlagId, and type are required' })
+    if (!flagId || !dependsOn || !type) {
+      res.status(400).json({ error: 'flagId, dependsOn, and type are required' })
       return
     }
 
-    if (!['REQUIRES', 'EXCLUDES'].includes(type)) {
-      res.status(400).json({ error: 'type must be REQUIRES or EXCLUDES' })
+    if (!['requires', 'excludes'].includes(type)) {
+      res.status(400).json({ error: 'type must be requires or excludes' })
       return
     }
 
-    if (fromFlagId === toFlagId) {
+    if (flagId === dependsOn) {
       res.status(400).json({ error: 'A flag cannot depend on itself' })
       return
     }
 
     // ── Confirm both flags exist ───────────────────────────────────────────
-    const fromFlag = getFlagById(db, fromFlagId)
-    const toFlag = getFlagById(db, toFlagId)
+    const fromFlag = getFlagById(db, flagId)
+    const toFlag = getFlagById(db, dependsOn)
 
     if (!fromFlag) {
-      res.status(404).json({ error: `Flag not found: ${fromFlagId}` })
+      res.status(404).json({ error: `Flag not found: ${flagId}` })
       return
     }
     if (!toFlag) {
-      res.status(404).json({ error: `Flag not found: ${toFlagId}` })
+      res.status(404).json({ error: `Flag not found: ${dependsOn}` })
       return
     }
 
     // ── Cycle detection — only for REQUIRES edges ──────────────────────────
     // EXCLUDES edges don't participate in dependency chains,
     // so they can never create a cycle.
-    if (type === 'REQUIRES') {
+    if (type === 'requires') {
       const existingEdges = getAllDependencies(db)
-      const wouldCycle = graphEngine.wouldCreateCycle(fromFlagId, toFlagId, existingEdges)
+      // Convert to FlagDependency format for cycle check
+      const edges = existingEdges.map(d => ({
+        fromFlagId: d.flagId,
+        toFlagId: d.dependsOn,
+        type: d.type.toUpperCase() as any,
+      }))
+      const wouldCycle = graphEngine.wouldCreateCycle(flagId, dependsOn, edges)
 
       if (wouldCycle) {
         res.status(409).json({
@@ -59,9 +71,9 @@ export function createDependenciesRouter(db: Database.Database): Router {
     // ── Save the edge ──────────────────────────────────────────────────────
     try {
       const dependency = createDependency(db, {
-        fromFlagId,
-        toFlagId,
-        type: type as DependencyType,
+        fromFlagId: flagId,
+        toFlagId: dependsOn,
+        type: type.toUpperCase() as DependencyType,
       })
       res.status(201).json(dependency)
     } catch (err: any) {

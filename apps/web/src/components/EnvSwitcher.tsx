@@ -9,7 +9,7 @@ export default function EnvSwitcher({ current, onChange }: EnvSwitcherProps) {
   const environments: Environment[] = ['dev', 'staging', 'prod']
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 mt-2">
       {environments.map(env => (
         <button
           key={env}

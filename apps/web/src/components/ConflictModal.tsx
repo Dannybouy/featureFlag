@@ -60,6 +60,8 @@ export default function ConflictModal({
     }
   }
 
+  const actionStatement = validation && validation.suggestedActions && validation.suggestedActions.length > 0 ? validation.suggestedActions[0].action : null
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-lg w-full mx-4 space-y-4">
@@ -67,7 +69,7 @@ export default function ConflictModal({
           <div className="text-2xl">⚠️</div>
           <div>
             <h2 className="text-xl font-bold text-white">
-              Cannot enable "{flagName || flagId}"
+              Cannot {actionStatement} "{flagName || flagId}"
             </h2>
             <p className="text-sm text-slate-400 mt-1">
               {validation.reason || 'Prerequisites are not met. The following flags must be enabled first:'}
@@ -95,7 +97,7 @@ export default function ConflictModal({
                     <div className={`w-4 h-4 rounded border ${
                       isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-500'
                     }`}>
-                      {isSelected && <div className="text-white text-xs leading-4">✓</div>}
+                      {isSelected && <div className="text-white text-xs leading-4 ml-1 -mt-0.5">✓</div>}
                     </div>
                     <div>
                       <p className="font-medium capitalize">
@@ -132,7 +134,7 @@ export default function ConflictModal({
             disabled={loading || selectedActions.size === 0}
             className="flex-1 btn-primary"
           >
-            {loading ? 'Enabling...' : 'Enable all & continue'}
+            {loading ? 'Resolving...' : 'Resolve'}
           </button>
         </div>
       </div>

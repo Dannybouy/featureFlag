@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import CycleModal from '../components/CycleModal'
 import DependencyList from '../components/DependencyList'
-import EnvSwitcher from '../components/EnvSwitcher'
 import FlagForm from '../components/FlagForm'
 import { useFlags } from '../hooks/useFlags'
 
@@ -13,8 +12,6 @@ export default function FlagDetailPage() {
   const {
     flags,
     dependencies,
-    environment,
-    setEnvironment,
     updateFlag,
     addDependency,
     removeDependency,
@@ -27,12 +24,12 @@ export default function FlagDetailPage() {
   const flag = flags.find(f => f.id === id)
 
   if (loading) {
-    return <div className="p-6 text-slate-400">Loading...</div>
+    return <div className="py-6 px-10 text-slate-400">Loading...</div>
   }
 
   if (!flag) {
     return (
-      <div className="p-6">
+      <div className="py-6 px-10">
         <div className="text-center">
           <p className="text-slate-400 mb-4">Flag not found</p>
           <button onClick={() => navigate('/')} className="btn-primary">
@@ -44,7 +41,7 @@ export default function FlagDetailPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="py-6 px-10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

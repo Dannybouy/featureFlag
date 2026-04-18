@@ -23,8 +23,6 @@ export default function FlagsPage() {
   const [conflict, setConflict] = useState<ValidationResult | null>(null)
   const [pendingToggle, setPendingToggle] = useState<{ flagId: string; enabled: boolean } | null>(null)
 
-  console.log(error)
-
   const handleToggleFlag = async (flagId: string, enabled: boolean) => {
     const result = await toggleFlag(flagId, enabled)
 
@@ -54,7 +52,7 @@ export default function FlagsPage() {
   const allFlagsMap = new Map(flags.map(f => [f.id, f]))
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 px-10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -71,7 +69,7 @@ export default function FlagsPage() {
 
       {/* Environment Switcher */}
       <div>
-        <p className="text-sm font-medium text-slate-300 mb-3">Environment</p>
+        <p className="text-sm font-medium text-slate-300 mb-5">Environment</p>
         <EnvSwitcher current={environment} onChange={setEnvironment} />
       </div>
 

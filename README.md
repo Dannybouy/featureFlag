@@ -1,159 +1,340 @@
-# Turborepo starter
+# Feature Flags Management System
 
-This Turborepo starter is maintained by the Turborepo core team.
+A production-grade feature flags management application built with **React 19**, **Express.js**, **SQLite**, and **TypeScript**. Manage feature flags across multiple environments (dev, staging, prod) with built-in dependency validation, circular dependency detection, and graph visualization.
 
-## Using this example
+## Features
 
-Run the following command:
+- ✅ **Multi-Environment Support**: Manage flags independently across dev, staging, and production
+- ✅ **Dependency Management**: Create prerequisite (requires) and conflict (excludes) relationships between flags
+- ✅ **Cycle Detection**: Automatic detection and prevention of circular dependencies
+- ✅ **Conflict Resolution**: Smart modal showing prerequisite flags that must be enabled before toggling dependent flags
+- ✅ **Graph Visualization**: Visual representation of flag dependencies and relationships
+- ✅ **Type-Safe**: Full TypeScript support across frontend and backend
+- ✅ **Real-time Validation**: Immediate feedback on invalid dependency operations
 
-```sh
-npx create-turbo@latest
+## Tech Stack
+
+### Backend
+
+- **Node.js** - Backend Language
+- **Express.js 5.2.1** - HTTP API server
+- **better-sqlite3** - Embedded SQL database
+- **TypeScript 6.0.2** - Type safety
+- **ts-node-dev** - Development server with auto-reload
+
+### Frontend
+
+- **React 19.2.5** - UI framework with latest hooks
+- **React Router DOM 7.14.1** - Client-side routing
+- **@xyflow/react 12.10.2** - Graph visualization
+- **Tailwind CSS 4.2.2** - Utility-first styling
+- **Vite 8.0.8** - Fast build tooling
+- **TypeScript 6.0.2** - Type safety
+
+### Monorepo
+
+- **Turborepo** - Monorepo management
+- **pnpm** - Package manager (recommended)
+
+## Project Structure
+
+```txt
+feature-flags/
+├── apps/
+│   ├── api/                  # Express.js backend
+│   │   ├── src/
+│   │   │   ├── db/          # Database schema, queries, mappers
+│   │   │   ├── routes/      # Express route handlers
+│   │   │   ├── graph/       # Graph engine for validation
+│   │   │   └── index.ts     # Server entry point
+│   │   └── data/            # SQLite database file (auto-created)
+│   │
+│   └── web/                  # React 19 frontend
+│       ├── src/
+│       │   ├── pages/       # Route pages
+│       │   ├── components/  # React components
+│       │   ├── hooks/       # Custom hooks (useFlags)
+│       │   ├── api/         # HTTP client
+│       │   └── App.tsx      # Main app component
+│       └── index.html       # Entry HTML
+│
+└── packages/
+    └── types/              # Shared TypeScript types
+        └── src/index.ts    # Type definitions (Flag, Dependency, etc.)
 ```
 
-## What's inside?
+## Getting Started
 
-This Turborepo includes the following packages/apps:
+### Prerequisites
 
-### Apps and Packages
+- **Node.js 18+** (tested with v20)
+- **pnpm 8+** or npm/yarn
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Installation
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+1. **Clone the repository**
 
-### Utilities
+   ```bash
+   git clone <repo-url>
+   cd feature-flags
+   ```
 
-This Turborepo has some additional tools already setup for you:
+2. **Install dependencies**
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+   ```bash
+   pnpm install
+   ```
 
-### Build
+   Or with npm:
 
-To build all apps and packages, run the following command:
+   ```bash
+   npm install
+   ```
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+3. **Database Setup**
+   - The SQLite database is automatically created on first run
+   - Database file location: `apps/api/data/flags.db`
+   - Schema is auto-initialized from `apps/api/src/db/schema.ts`
+   - No manual migration steps required
 
-```sh
-cd my-turborepo
-turbo build
+### Development
+
+**Start both API and frontend dev servers** (from root):
+
+```bash
+pnpm dev
 ```
 
-Without global `turbo`, use your package manager:
+This will start:
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+- **API**: `http://localhost:3001`
+- **Frontend**: `http://localhost:5173`
+
+**Or run services independently**:
+
+```bash
+# Start API only
+pnpm dev --filter=api
+
+# Start frontend only
+pnpm dev --filter=web
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Building for Production
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+```bash
+# Build all apps and packages
+pnpm build
 
-```sh
-turbo build --filter=docs
+# Build specific app
+pnpm build --filter=web
 ```
 
-Without global `turbo`:
+### Database Reset
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+Reset the database (deletes all flags and dependencies):
+
+```bash
+curl -X DELETE http://localhost:3001/reset
 ```
 
-### Develop
+## API Endpoints
 
-To develop all apps and packages, run the following command:
+### Flags
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- `GET /flags` - Get all flags with per-environment states
+- `GET /flags/:id` - Get specific flag
+- `POST /flags` - Create new flag (auto-seeds all environments as disabled)
+- `PATCH /flags/:id` - Update flag name/description
+- `PATCH /flags/:id/toggle` - Toggle flag in specific environment (with validation)
+- `DELETE /flags/:id` - Delete flag
 
-```sh
-cd my-turborepo
-turbo dev
+### Dependencies
+
+- `GET /dependencies` - Get all dependencies
+- `POST /dependencies` - Create new dependency (with cycle detection)
+- `DELETE /dependencies/:id` - Remove dependency
+
+### Graph
+
+- `GET /graph?environment=dev` - Get dependency graph snapshot
+
+## Key Concepts
+
+### Flag States
+
+Each flag has independent `on/off` states per environment:
+
+```typescript
+{
+  id: "checkout-v2",
+  name: "Checkout V2",
+  states: {
+    dev: true,      // Enabled in dev
+    staging: false, // Disabled in staging
+    prod: false     // Disabled in prod
+  }
+}
 ```
 
-Without global `turbo`, use your package manager:
+### Dependencies
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+Two types of relationships:
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+1. **Requires**: Flag A cannot be enabled unless Flag B is enabled
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+   ```txt
+   checkout-v2 requires payment-service
+   ```
 
-```sh
-turbo dev --filter=web
-```
+2. **Excludes**: Flag A and Flag B cannot both be enabled simultaneously
 
-Without global `turbo`:
+   ```txt
+   legacy-checkout excludes checkout-v2
+   ```
 
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+### Validation Flow
 
-### Remote Caching
+When toggling a flag:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+1. Load current graph state for that environment
+2. Graph engine validates if operation is allowed
+3. If prerequisites unmet or conflicts exist → Return 409 with suggested actions
+4. Frontend shows conflict modal with resolution options
+5. User selects actions to enable prerequisites
+6. System chains toggles: prerequisites → target flag
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+### Cycle Detection
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Before creating a `requires` dependency:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- Perform depth-first search on existing edges
+- Detect if adding new edge would create cycle
+- If cycle detected → Return 409 with involved flags
+- Frontend shows cycle modal preventing invalid state
 
-```sh
-cd my-turborepo
-turbo login
-```
+## Assumptions Made
 
-Without global `turbo`, use your package manager:
+1. **Single User/No Authentication**
+   - No login system implemented; assumes single user or internal tool usage
+   - All users see and can modify all flags
 
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
+2. **SQLite Sufficiency**
+   - better-sqlite3 chosen for simplicity; scales to ~100k flags comfortably
+   - For production with millions of flags, consider PostgreSQL
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+3. **Graph Engine in Memory**
+   - Full dependency graph loaded into memory on each toggle
+   - Fine for <10k flags; larger graphs may need caching strategy
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+4. **Synchronous Dependency Validation**
+   - Toggle validation is synchronous (graph engine computes instantly)
+   - Suitable for small-to-medium graphs; async iteration for larger ones
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+5. **Environment as Property**
+   - Environments (dev/staging/prod) are hardcoded as tuple
+   - Adding new environments requires code changes, not config
 
-```sh
-turbo link
-```
+6. **Frontend State via Hook**
+   - All flag state managed in single `useFlags` hook with local React state
+   - No external state manager (Zustand, Redux) to keep it lightweight
 
-Without global `turbo`:
+7. **CORS Permissive**
+   - Backend allows all origins from `http://localhost:5173`
+   - Hardcoded for development; should be configurable in production
 
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
+## Improvements for Future Work
 
-## Useful Links
+### High Priority
 
-Learn more about the power of Turborepo:
+- [ ] **Authentication & Authorization**
+  - Add login system (OAuth2, JWT tokens)
+  - Role-based access control (viewer, editor, admin)
+  - Audit logs for all flag changes
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- [ ] **Persistence & Recovery**
+  - Database backups and restore functionality
+  - Change history/rollback capability
+  - Flag version control and staged rollouts
+
+- [ ] **Production Readiness**
+  - Environment variables for database path, API port, origin
+  - Structured logging and error tracking (Sentry/LogRocket)
+  - Performance monitoring and metrics
+
+### Medium Priority
+
+- [ ] **Advanced Dependency Features**
+  - Transitive dependency visualization
+  - Impact analysis (show all affected flags when toggling)
+  - Scheduled flag changes/cron support
+
+- [ ] **Graph Visualization**
+  - Better graph layout algorithms (currently uses Dagre)
+  - Zoom/pan controls with minimap
+  - Click-to-edit from graph view
+  - Highlight dependency chains on hover
+
+- [ ] **Testing**
+  - Comprehensive unit tests for graph engine
+  - Integration tests for toggle scenarios
+  - E2E tests with Playwright for full workflows
+
+- [ ] **UI/UX Polish**
+  - Search/filter for large flag lists
+  - Bulk operations (enable/disable multiple flags)
+  - Dark/light theme toggle
+  - Keyboard shortcuts
+  - Undo/redo for recent changes
+
+### Lower Priority
+
+- [ ] **Scaling**
+  - Migrate to PostgreSQL for production
+  - Add Redis caching layer for graph snapshot
+  - Implement pagination for large datasets
+  - GraphQL API as alternative to REST
+
+- [ ] **DevOps**
+  - Docker containerization
+  - GitHub Actions CI/CD pipeline
+  - Kubernetes deployment templates
+  - Performance benchmarking
+
+- [ ] **Integration**
+  - Webhook support for external systems
+  - Slack notifications on flag changes
+  - GitHub integration for deployment tracking
+  - Feature flag SDK libraries (Go, Python, Java)
+
+- [ ] **Accessibility**
+  - Full WCAG 2.1 AA compliance audit
+  - Screen reader testing
+  - Keyboard navigation polish
+  - High contrast mode
+
+## Known Limitations
+
+- **No real-time updates**: Changes not broadcast to other connected clients
+- **Single instance only**: Running multiple API instances requires state synchronization
+- **Conflict modal cannot auto-resolve**: Users must manually select prerequisite flags (backend could provide preferred resolution strategy)
+- **No flag rollout strategies**: Binary on/off only (no percentage-based rollouts or canary deployments)
+- **Graph visualization limited**: Large dependency graphs (1000+ edges) may render slowly
+
+## Contributing
+
+When contributing:
+
+1. Follow TypeScript best practices
+2. Add tests for new graph engine functionality
+3. Update types in `packages/types` before frontend/backend
+4. Test cycle detection scenarios thoroughly
+5. Update README if adding major features
+
+## License
+
+MIT
+
+---
+
+**Built with ❤️ for feature flag management**
